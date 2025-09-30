@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.6'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.dean.study.flux'
+version = '0.0.1-SNAPSHOT'
+description = 'noti'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(24)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2025.0.0" // Cloud 2025.x
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'      // MVC
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // Kafka (저수준)
+    implementation 'org.springframework.kafka:spring-kafka'
+
+    // Spring Cloud Stream (코어: StreamBridge 제공)
+    implementation 'org.springframework.cloud:spring-cloud-stream'
+    // Spring Cloud Stream + Kafka Binder (함수형 바인딩/StreamBridge용)
+    implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
+
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
