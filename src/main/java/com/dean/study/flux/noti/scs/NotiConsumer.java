@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 
 import java.time.Instant;
 import java.util.function.Consumer;
@@ -32,7 +31,6 @@ public class NotiConsumer {
             try {
                 OrderCreatedEvent evt = objectMapper.readValue(payload.getPayload(), OrderCreatedEvent.class);
                 String json = objectMapper.writeValueAsString(evt);
-                try { Thread.sleep(5000); } catch (InterruptedException ignored) {}
                 notiRepository.save(Noti.builder()
                         .orderId(evt.orderId())
                         .itemId(evt.itemId())
