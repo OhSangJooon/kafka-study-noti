@@ -29,15 +29,17 @@ spring:
             max-attempts: 4 # 실패 즉시 DLT로 전송 재시도 4번
 
             # === 재시도/백오프 ===
-            back-off-initial-interval: 500ms
+            back-off-initial-interval: 500
             back-off-multiplier: 2.0
-            back-off-max-interval: 10s
-            retryable-exceptions: # 어떤 예외를 재시도할지(기본은 대부분 재시도 대상)
-              - org.springframework.dao.DataIntegrityViolationException
-              - java.sql.SQLTransientException
-              - com.zaxxer.hikari.pool.PoolInitializationException
-              - java.sql.SQLRecoverableException
-            # 역직렬화 같은 건 재시도 말고 바로 DLT 보내고 싶다면(옵션)
+            back-off-max-interval: 10
+
+            defaultRetryable: false # 기본값을 비재시도로 두고 필요한 예외만 true로 켠다면 ↓
+            retryable-exceptions:
+              java.lang.IllegalArgumentException: false
+              org.springframework.dao.DataIntegrityViolationException: true
+              java.sql.SQLTransientException: true
+              java.sql.SQLRecoverableException: true
+              org.springframework.dao.TransientDataAccessResourceException: true
 
         # KafkaTemplate 발행 수신 (헤더 없음 → native 디코딩 필수)
         orderKafkaConsumer-in-0:
