@@ -14,7 +14,7 @@ spring:
 
   cloud:
     function:
-      definition: orderScsConsumer;orderKafkaConsumer # 두 컨슈머를 함수형으로 등록
+      definition: orderScsConsumer;orderKafkaConsumer;orderDltLogger # 컨슈머를 함수형으로 등록
     stream:
       default:
         content-type: application/json
@@ -26,7 +26,18 @@ spring:
           content-type: application/json
           consumer:
             use-native-decoding: false   # ← 명시적으로 SCS 디코딩
+            max-attempts: 4 # 실패 즉시 DLT로 전송 재시도 4번
 
+            # === 재시도/백오프 ===
+            back-off-initial-interval: 500ms
+            back-off-multiplier: 2.0
+            back-off-max-interval: 10s
+            retryable-exceptions: # 어떤 예외를 재시도할지(기본은 대부분 재시도 대상)
+              - org.springframework.dao.DataIntegrityViolationException
+              - java.sql.SQLTransientException
+              - com.zaxxer.hikari.pool.PoolInitializationException
+              - java.sql.SQLRecoverableException
+            # 역직렬화 같은 건 재시도 말고 바로 DLT 보내고 싶다면(옵션)
 
         # KafkaTemplate 발행 수신 (헤더 없음 → native 디코딩 필수)
         orderKafkaConsumer-in-0:
@@ -35,6 +46,13 @@ spring:
           content-type: application/json
           consumer:
             use-native-decoding: true
+
+        orderDltLogger-in-0:
+          destination: order-created-scs.noti-scs-group.DLT
+          group: noti-dlt-monitor
+          content-type: application/json
+          consumer:
+            use-native-decoding: false
 
       # Kafka 바인더 공통
       kafka:
@@ -52,9 +70,21 @@ spring:
                 spring.json.value.default.type: com.dean.study.flux.noti.dto.OrderCreatedEvent
                 spring.json.use.type.headers: false
                 auto.offset.reset: latest
+
+          # 바인딩 키 - 카프카전용
+          orderScsConsumer-in-0:
+            consumer:
+              # Kafka 전용(바인더) 설정
+              enableDlq: true                  # DLT 사용
+              dlqName: order-created-scs.noti-scs-group.DLT  # (원하면 직접 이름 고정)
+              autoCommitOnError: false       # 실패 시 오프셋 커밋 제어 (옵션)
+
+
+
   kafka:
+    bootstrap-servers: 10.0.114.30:29092
     consumer:
-      auto-offset-reset: latest
+      auto-offset-reset: latest # 토픽의 가장 최근(offset end) 이후부터 읽기 시작 - 애플리케이션 실행 이후에 들어오는 새 메시지부터 소비
 
 logging:
   level:

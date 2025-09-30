@@ -32,6 +32,7 @@ public class NotiConsumer {
             try {
                 OrderCreatedEvent evt = objectMapper.readValue(payload.getPayload(), OrderCreatedEvent.class);
                 String json = objectMapper.writeValueAsString(evt);
+                try { Thread.sleep(5000); } catch (InterruptedException ignored) {}
                 notiRepository.save(Noti.builder()
                         .orderId(evt.orderId())
                         .itemId(evt.itemId())
@@ -41,7 +42,18 @@ public class NotiConsumer {
                 log.info("[SCS] saved NOTI: {}", evt);
             } catch (Exception e) {
                 log.error("SCS consume error", e);
+                throw new RuntimeException(e);
             }
+        };
+    }
+
+    @Bean
+    public Consumer<Message<byte[]>> orderDltLogger() {
+        return msg -> {
+            String payload = new String(msg.getPayload());
+            log.warn("[DLT] payload={}, headers={}", payload, msg.getHeaders());
+            // TODO: 여기서 알림/DB저장/보정 재처리 등 원하는 후처리
+            log.error("[orderDltLogger - DLT] 실패 알림발송!! {}", msg);
         };
     }
 
